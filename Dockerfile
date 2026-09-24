@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:1.11.0-cuda11.3-cudnn8-runtime
+FROM pytorch/pytorch:2.3.0-cuda12.1-cudnn8-runtime
 
 RUN groupadd -r algorithm && useradd -m --no-log-init -r -g algorithm algorithm
 
@@ -7,6 +7,24 @@ RUN mkdir -p /opt/algorithm /input /output \
 
 RUN apt-get -y update
 RUN apt-get -y install git
+
+COPY requirements.txt /tmp/requirements.txt
+ENV SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL=True
+RUN python3 -m pip install -U pip && \
+    python3 -m pip install -r /tmp/requirements.txt
+
+# Extend the nnUNet installation with custom trainers
+COPY --chown=algorithm:algorithm nnUNetTrainerV2_focalLoss.py /tmp/nnUNetTrainerV2_focalLoss.py
+RUN SITE_PKG=`pip3 show nnunet | grep "Location:" | awk '{print $2}'` && \
+    mv /tmp/nnUNetTrainerV2_focalLoss.py "$SITE_PKG/nnunet/training/network_training/nnUNet_variants/loss_function/nnUNetTrainerV2_focalLoss.py"
+
+COPY --chown=algorithm:algorithm nnUNetTrainerV2_Loss_CE_checkpoints.py /tmp/nnUNetTrainerV2_Loss_CE_checkpoints.py
+RUN SITE_PKG=`pip3 show nnunet | grep "Location:" | awk '{print $2}'` && \
+    mv /tmp/nnUNetTrainerV2_Loss_CE_checkpoints.py "$SITE_PKG/nnunet/training/network_training/nnUNetTrainerV2_Loss_CE_checkpoints.py"
+
+COPY --chown=algorithm:algorithm nnUNetTrainerV2_Loss_FL_and_CE.py /tmp/nnUNetTrainerV2_Loss_FL_and_CE.py
+RUN SITE_PKG=`pip3 show nnunet | grep "Location:" | awk '{print $2}'` && \
+    mv /tmp/nnUNetTrainerV2_Loss_FL_and_CE.py "$SITE_PKG/nnunet/training/network_training/nnUNetTrainerV2_Loss_FL_and_CE.py"
 
 USER algorithm
 
@@ -31,28 +49,11 @@ RUN mkdir -p /opt/algorithm/results/ \
     && chown algorithm:algorithm /opt/algorithm/results/
 COPY --chown=algorithm:algorithm results/ /opt/algorithm/results/
 
-# Install algorithm requirements
-ENV SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL=True
-COPY --chown=algorithm:algorithm requirements.txt /opt/algorithm/
-RUN python -m pip install --user -r requirements.txt
 
-# Extend the nnUNet installation with custom trainers
-COPY --chown=algorithm:algorithm nnUNetTrainerV2_focalLoss.py /tmp/nnUNetTrainerV2_focalLoss.py
-RUN SITE_PKG=`pip3 show nnunet | grep "Location:" | awk '{print $2}'` && \
-    mv /tmp/nnUNetTrainerV2_focalLoss.py "$SITE_PKG/nnunet/training/network_training/nnUNet_variants/loss_function/nnUNetTrainerV2_focalLoss.py"
-
-COPY --chown=algorithm:algorithm nnUNetTrainerV2_Loss_CE_checkpoints.py /tmp/nnUNetTrainerV2_Loss_CE_checkpoints.py
-RUN SITE_PKG=`pip3 show nnunet | grep "Location:" | awk '{print $2}'` && \
-    mv /tmp/nnUNetTrainerV2_Loss_CE_checkpoints.py "$SITE_PKG/nnunet/training/network_training/nnUNetTrainerV2_Loss_CE_checkpoints.py"
-
-COPY --chown=algorithm:algorithm nnUNetTrainerV2_Loss_FL_and_CE.py /tmp/nnUNetTrainerV2_Loss_FL_and_CE.py
-RUN SITE_PKG=`pip3 show nnunet | grep "Location:" | awk '{print $2}'` && \
-    mv /tmp/nnUNetTrainerV2_Loss_FL_and_CE.py "$SITE_PKG/nnunet/training/network_training/nnUNetTrainerV2_Loss_FL_and_CE.py"
 
 # Copy the processor to the algorithm container folder
 COPY --chown=algorithm:algorithm process.py /opt/algorithm/
-
-ENTRYPOINT python -m process $0 $@
+ENTRYPOINT ["python", "-m", "process", " $0", "$@"]
 
 ## ALGORITHM LABELS ##
 
