@@ -1,0 +1,5 @@
+evalutils==0.3.0
+SimpleITK>=2.3,<3
+picai_eval>=1.4.4
+picai_prep>=2.1.2
+report_guided_annotation @ git+https://github.com/DIAGNijmegen/Report-Guided-Annotation.git
