@@ -1,0 +1,13 @@
+acvl-utils==0.2.7
+batchgenerators==0.25.6
+batchgeneratorsv2==0.3.7
+blosc2==4.3.3
+dynamic-network-architectures==0.4.4
+imagecodecs==2025.3.30
+picai_eval==1.4.13
+picai_prep==2.1.13
+report_guided_annotation==0.3.2
+scikit-image==0.25.2
+scikit-learn==1.7.2
+SimpleITK==2.5.7
+timm==1.0.22

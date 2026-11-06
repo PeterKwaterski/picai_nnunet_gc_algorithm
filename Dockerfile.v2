@@ -1,0 +1,32 @@
+FROM pytorch/pytorch:2.3.0-cuda12.1-cudnn8-runtime@sha256:0279f7aa29974bf64e61d0ff6e979b41a249b3662a46e30778dbf80b8c99c361
+
+ARG NNUNET_GIT_URL=https://github.com/PeterKwaterski/nnUNet.git
+ARG NNUNET_GIT_REF=v2.8.1-picai.2
+
+RUN groupadd -r algorithm && useradd -m --no-log-init -r -g algorithm algorithm && \
+    mkdir -p /opt/algorithm /input /output && \
+    chown algorithm:algorithm /opt/algorithm /input /output
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends git ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY requirements-v2.txt /tmp/requirements-v2.txt
+COPY constraints-v2.txt /tmp/constraints-v2.txt
+RUN git clone --depth 1 --branch "${NNUNET_GIT_REF}" "${NNUNET_GIT_URL}" /opt/nnUNet && \
+    python -m pip install --no-cache-dir -c /tmp/constraints-v2.txt -e /opt/nnUNet -r /tmp/requirements-v2.txt && \
+    python -m pip check
+
+WORKDIR /opt/algorithm
+ENV nnUNet_results=/opt/algorithm/nnUNet_results
+
+RUN mkdir -p /opt/algorithm/nnUNet_results && \
+    chown -R algorithm:algorithm /opt/algorithm
+COPY --chown=algorithm:algorithm results_v2/ /opt/algorithm/nnUNet_results/
+COPY --chown=algorithm:algorithm inference_v2.py /opt/algorithm/inference_v2.py
+COPY --chown=algorithm:algorithm process_v2.py /opt/algorithm/process_v2.py
+
+USER algorithm
+ENTRYPOINT ["python", "/opt/algorithm/process_v2.py"]
+
+LABEL nl.diagnijmegen.rse.algorithm.name=picai_nnunet_v2_processor
