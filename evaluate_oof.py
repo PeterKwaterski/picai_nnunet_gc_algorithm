@@ -3,10 +3,17 @@
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 import SimpleITK as sitk
 from picai_eval import evaluate_folder
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from picai_labels.binarize import binarize_picai_granular
 
 RESAMPLED_DIR = Path("csPCa_lesion_delineations/human_expert/resampled")
 POOCH25_DIR = Path("csPCa_lesion_delineations/human_expert/Pooch25")
@@ -69,7 +76,7 @@ def prepare_binary_label(src: Path, dst: Path):
         return
     dst.parent.mkdir(parents=True, exist_ok=True)
     label = sitk.GetArrayFromImage(sitk.ReadImage(str(src)))
-    binary = (label >= 2).astype("uint8")
+    binary = binarize_picai_granular(label)
     out = sitk.GetImageFromArray(binary)
     out.CopyInformation(sitk.ReadImage(str(src)))
     sitk.WriteImage(out, str(dst), useCompression=True)
