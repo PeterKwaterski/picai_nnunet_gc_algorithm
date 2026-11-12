@@ -135,3 +135,5 @@ dmypy.json
 *.sif
 results/oof/
 logs/
+mcw_output/
+mcw_test/
