@@ -137,3 +137,4 @@ results/oof/
 logs/
 mcw_output/
 mcw_test/
+*.mha

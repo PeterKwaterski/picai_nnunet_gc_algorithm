@@ -40,6 +40,12 @@ def parse_args():
         help="Directory with ds-config-valid-fold-*.json files.",
     )
     parser.add_argument(
+        "--n-folds",
+        type=int,
+        default=5,
+        help="Number of development CV folds (default: 5).",
+    )
+    parser.add_argument(
         "--prepared-labels-dir",
         type=Path,
         default=None,
@@ -54,9 +60,9 @@ def parse_args():
     return parser.parse_args()
 
 
-def load_oof_subject_list(splits_dir: Path) -> list[str]:
+def load_oof_subject_list(splits_dir: Path, n_folds: int = 5) -> list[str]:
     subjects = []
-    for fold in range(5):
+    for fold in range(n_folds):
         split_file = splits_dir / f"ds-config-valid-fold-{fold}.json"
         with split_file.open() as fp:
             subjects.extend(json.load(fp)["subject_list"])
@@ -84,7 +90,7 @@ def prepare_binary_label(src: Path, dst: Path):
 
 def main():
     args = parse_args()
-    subject_list = load_oof_subject_list(args.splits_dir)
+    subject_list = load_oof_subject_list(args.splits_dir, args.n_folds)
     prepared_labels_dir = args.prepared_labels_dir or (
         args.predictions_dir / "_labels_binary"
     )
